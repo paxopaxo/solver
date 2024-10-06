@@ -15,43 +15,56 @@ def crea_combinaciones(instancia):
 
 #Recibe como parametro una única instancia
 def crea_modelo(instancia, nombre_archivo):
-    combinaciones_por_asignatura = crea_combinaciones(instancia)
-    # print(combinaciones)
 
     # Crea archivo
     archivo = open(nombre_archivo+'.lp', 'w')
     # Escribe el contenido en el archivo
     funcion_objetivo = 'max: '
     bn = 'bin '
-    res1 = '' #restricción sumatoria de las combinaciones para una asignatura particular debe sumar menor igual a 1
+    res1 = '' #restricción Cada asignatura solo puede usar \textbf{una} sala en un determinado bloque y día.
     res2 = '' #restricción horarios que no pueden asistir los profesores de det asignatura
     res3 = '' #restricción cantidad de bloques por semana
-    for key in combinaciones_por_asignatura:
-        
+
+    combinaciones_bloque_dia = instancia['asignaturas'][1]['salas'][1]['horarios']
+    # print(combinaciones_bloque_dia)
+    for key in instancia['asignaturas']:
+    
         priority = instancia['asignaturas'][key]['prioridad'] # Rescata la prioridad de la asignatura
         bloques_semanales = instancia['asignaturas'][key]['cantidad_bloques'] # Rescata la cantidad de bloques semanales x asignatura
-        
-        temp = ''
 
-        # Recorriendo todas las combinaciones posibles para una asignatura particular. c = [sala,bloque,dia] ejemplo
-        for c in combinaciones_por_asignatura[key]:
-            y_particular = f'y{key}.{c[0]}.{c[1]}.{c[2]}' # y(asignatura).(sala).(bloque).(dia) [todas las comb posibles]
-            funcion_objetivo += f' { priority } {y_particular} +'
+        # Recorrer todos los bloques y días posibles
+        bloques_y_dias = {}
 
-            temp+= y_particular+' +' # Sumatoria de todas las combinaciones para una asignatura particular (Creando restricción inicial)
+        for key_sala in instancia['asignaturas'][key]['salas']:
+            sala_actual = key_sala
+            asignatura_actual = key
 
-            # Verifica si el profesor tiene el bloque disponible sin importar la sala, si no está disponible, restringe esa combi
-            if tuple(c[1:]) in instancia['asignaturas'][key]['bloques_no_disponibles']:
-                res2+= f'{y_particular} = 0;\n'
-            else:
-                # Ya que los limites se deben definir solo 1 vez
-                bn += f'{y_particular},' # Esta cadena es para definirlas todas como variables binarias luego
+            #y{asignatura}.{sala1}.{bloque}.{dia} + y{asignatura}.{sala2}.{bloque}.{dia} + ... <= 1
+            
+            for horario in instancia['asignaturas'][key]['salas'][key_sala]['horarios']:
+                bloque = horario[0]
+                dia = horario[1]
                 
-        
-        # Agrega la restricción de que la sumatoria de las combinaciones para una asignatura particular debe sumar menor igual a 1
-        temp = temp[:-1]
-        # res1+= f'{temp}<= 1;\n'
-        res3+= f'{temp} = {bloques_semanales};\n'
+                y_particular = f'y{asignatura_actual}.{sala_actual}.{bloque}.{dia}' # y(asignatura).(sala).(bloque).(dia) [todas las comb posibles]
+                funcion_objetivo += f' { priority } {y_particular} +'
+
+                # Verifica si el profesor tiene el bloque disponible sin importar la sala, si no está disponible, restringe esa combi
+                if tuple(horario) in instancia['asignaturas'][key]['bloques_no_disponibles']:
+                    res2+= f'{y_particular} = 0;\n'
+                else:
+                    # Ya que los limites se deben definir solo 1 vez
+                    bn += f'{y_particular},' # Esta cadena es para definirlas todas como variables binarias luego
+                
+                # Agrupar las variables por combinación de (bloque, día) para la restricción de `res1`
+                if (bloque, dia) not in bloques_y_dias:
+                    bloques_y_dias[(bloque, dia)] = []
+                bloques_y_dias[(bloque, dia)].append(y_particular)
+
+
+        # Generar restricciones para asegurar que solo una sala se use por asignatura, bloque y día
+        for (bloque, dia), variables in bloques_y_dias.items():
+            restriccion = ' + '.join(variables) + ' <= 1;\n'
+            res1 += restriccion
 
     # Esto solamente lo hago para evitar el problema de que me quede el signo más al final, no se me ocurrio una idea más pulcra
     funcion_objetivo = funcion_objetivo[:-1]
@@ -61,12 +74,6 @@ def crea_modelo(instancia, nombre_archivo):
     bn += ';'
 
     archivo.write( funcion_objetivo+'\n\n')
-    # Ahora la idea seria encajar la primera reestricción, por ejemplo:
-    # y1.1.1.1 + y1.1.1.2 + y1.1.1.3 +  y1.1.1.4 \leq 1
-    # Suponiendo que en este caso que solo hay 4 dias y 1 bloque y una sala. 
-    #Es decir, todas las combinaciones siguinetes para una asignatura particular
-    #Solo una combinacion puede ser correcta.
-    
     archivo.write( res1 )
     archivo.write( res2 )
     archivo.write( bn )

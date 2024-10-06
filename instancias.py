@@ -72,11 +72,6 @@ def generar_instancia(num_asignaturas, num_salas, b):
     # desordeno aun mas el arreglo
     random.shuffle(prioridades)
 
-    #Aqui simplemente lo estoy mapeando a la estructura original que habiamos creado
-    # recordar que A son los valores del 1 al n, cuando lo recorremos resto 1 para evitar que este fuera de rango con 
-    # prioridades donde su indice parte del cero.
-    for i in A:
-        asignaturas[i]['prioridad'] = prioridades[i-1]
 
     # instancia = {
     #     "asignaturas": A,
@@ -87,8 +82,15 @@ def generar_instancia(num_asignaturas, num_salas, b):
 
     salas_dics = {}
     for i in S:
-        salas_dics[i] = {'capacidad' : random.randint(45,80) }
+        salas_dics[i] = {'capacidad' : random.randint(45,80), 'horarios': [(k, h) for k in B for h in D] }
 
+    #Aqui simplemente lo estoy mapeando a la estructura original que habiamos creado
+    # recordar que A son los valores del 1 al n, cuando lo recorremos resto 1 para evitar que este fuera de rango con 
+    # prioridades donde su indice parte del cero.
+    for i in A:
+        asignaturas[i]['prioridad'] = prioridades[i-1]
+        asignaturas[i]['salas'] = salas_dics
+    
     instancia = {
         "asignaturas": asignaturas,
         "salas": salas_dics,
@@ -134,15 +136,15 @@ def generar_instancias_medianas_grandes(tipo='mediana', num_instancias=5):
     return instancias
 
 # Print de 5 instancias en cada caso (pequeña, mediana y grande)
-print("Generando instancias pequeñas...")
-instancias_pequenas = generar_instancias_pequenas(1)
-guardar_diccionario_como_json(instancias_pequenas, 'instancias_pequenas')
+# print("Generando instancias pequeñas...")
+# instancias_pequenas = generar_instancias_pequenas(1)
+# guardar_diccionario_como_json(instancias_pequenas, 'instancias_pequenas')
 # for i, instancia in enumerate(instancias_pequenas, 1):
 #     print(f"Instancia pequeña {i}: {instancia}")
 
-# print("\nGenerando instancias medianas...")
-# instancias_medianas = generar_instancias_medianas_grandes(tipo='mediana', num_instancias=1)
-# guardar_diccionario_como_json(instancias_medianas, 'instancias_medianas')
+print("\nGenerando instancias medianas...")
+instancias_medianas = generar_instancias_medianas_grandes(tipo='mediana', num_instancias=1)
+guardar_diccionario_como_json(instancias_medianas, 'instancias_medianas')
 
 # for i, instancia in enumerate(instancias_medianas, 1):
 #     print(f"Instancia mediana {i}: {instancia}")
@@ -154,5 +156,5 @@ guardar_diccionario_como_json(instancias_pequenas, 'instancias_pequenas')
 # for i, instancia in enumerate(instancias_grandes, 1):
 #     print(f"Instancia grande {i}: {instancia}")
 
-
-solver.crea_modelo(instancias_pequenas[0], 'model_pequena')
+solver.crea_modelo(instancias_medianas[0], 'model_mediana')
+# solver.crea_modelo(instancias_pequenas[0], 'model_pequena')
