@@ -2,6 +2,20 @@ import random
 import math
 import json
 import solver
+import argparse
+
+# Inicializa el parser de argumentos
+parser = argparse.ArgumentParser(description="Script con tres banderas")
+
+# Añadir las banderas
+parser.add_argument('--chico', action='store_true', help="Descripción de la bandera 1")
+parser.add_argument('--mediano', action='store_true', help="Descripción de la bandera 2")
+parser.add_argument('--grande', action='store_true', help="Descripción de la bandera 3")
+
+# Parsear los argumentos
+args = parser.parse_args()
+
+
 
 def guardar_diccionario_como_json(diccionario, nombre_archivo):
     with open(nombre_archivo, 'w') as archivo_json:
@@ -137,24 +151,22 @@ def generar_instancias_medianas_grandes(tipo='mediana', num_instancias=5):
 
 # Print de 5 instancias en cada caso (pequeña, mediana y grande)
 # print("Generando instancias pequeñas...")
-# instancias_pequenas = generar_instancias_pequenas(1)
-# guardar_diccionario_como_json(instancias_pequenas, 'instancias_pequenas')
-# for i, instancia in enumerate(instancias_pequenas, 1):
-#     print(f"Instancia pequeña {i}: {instancia}")
+if args.chico:
+    instancias_pequenas = generar_instancias_pequenas(1)
+    guardar_diccionario_como_json(instancias_pequenas, 'instancias_pequenas')
+    # for i, instancia in enumerate(instancias_pequenas, 1):
+    #     print(f"Instancia pequeña {i}: {instancia}")
 
-print("\nGenerando instancias medianas...")
-instancias_medianas = generar_instancias_medianas_grandes(tipo='mediana', num_instancias=1)
-guardar_diccionario_como_json(instancias_medianas, 'instancias_medianas')
+    solver.crea_modelo(instancias_pequenas[0], 'model_pequena')
 
-# for i, instancia in enumerate(instancias_medianas, 1):
-#     print(f"Instancia mediana {i}: {instancia}")
+if args.mediano:
+    print("\nGenerando instancias medianas...")
+    instancias_medianas = generar_instancias_medianas_grandes(tipo='mediana', num_instancias=1)
+    guardar_diccionario_como_json(instancias_medianas, 'instancias_medianas')
+    solver.crea_modelo(instancias_medianas[0], 'model_mediana')
 
-# print("\nGenerando instancias grandes...")
-# instancias_grandes = generar_instancias_medianas_grandes(tipo='grande', num_instancias=5)
-# guardar_diccionario_como_json(instancias_grandes, 'instancias_grandes')
-
-# for i, instancia in enumerate(instancias_grandes, 1):
-#     print(f"Instancia grande {i}: {instancia}")
-
-solver.crea_modelo(instancias_medianas[0], 'model_mediana')
-# solver.crea_modelo(instancias_pequenas[0], 'model_pequena')
+if args.grande:
+    print("\nGenerando instancias grandes...")
+    instancias_grandes = generar_instancias_medianas_grandes(tipo='grande', num_instancias=1)
+    # guardar_diccionario_como_json(instancias_grandes, 'instancias_grandes')
+    solver.crea_modelo(instancias_grandes[0], 'model_grande')
