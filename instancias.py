@@ -91,7 +91,9 @@ def generar_instancia(num_asignaturas, num_salas, b):
 
     instancia = {
         "asignaturas": asignaturas,
-        "salas": salas_dics
+        "salas": salas_dics,
+        "bloques": B,
+        "dias": D
     }
     return instancia
 
@@ -133,7 +135,7 @@ def generar_instancias_medianas_grandes(tipo='mediana', num_instancias=5):
 
 # Print de 5 instancias en cada caso (pequeña, mediana y grande)
 print("Generando instancias pequeñas...")
-instancias_pequenas = generar_instancias_pequenas(5)
+instancias_pequenas = generar_instancias_pequenas(1)
 guardar_diccionario_como_json(instancias_pequenas, 'instancias_pequenas')
 # for i, instancia in enumerate(instancias_pequenas, 1):
 #     print(f"Instancia pequeña {i}: {instancia}")
