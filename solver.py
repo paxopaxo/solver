@@ -21,12 +21,14 @@ def crea_modelo(instancia, nombre_archivo):
     # Escribe el contenido en el archivo
     funcion_objetivo = 'max: '
     bn = 'bin '
-    res1 = '' #restricción Cada asignatura solo puede usar \textbf{una} sala en un determinado bloque y día.
+    res1 = '' #restricción la clase no puede ocurrir en distintas en distintas salas a la misma hora y dia.
     res2 = '' #restricción horarios que no pueden asistir los profesores de det asignatura
     res3 = '' #restricción cantidad de bloques por semana
+    res4 = '' #restriccion no pueden haber dos salas en un mismo horario asignadas a distintas clases. solo se puede usar la sala1 vez
 
-    combinaciones_bloque_dia = instancia['asignaturas'][1]['salas'][1]['horarios']
-    # print(combinaciones_bloque_dia)
+    # Agrupación de todas las combinaciones (bloque, día) para todas las asignaturas
+    bloques_y_dias_global = {}
+
     for key in instancia['asignaturas']:
     
         priority = instancia['asignaturas'][key]['prioridad'] # Rescata la prioridad de la asignatura
@@ -34,6 +36,9 @@ def crea_modelo(instancia, nombre_archivo):
 
         # Recorrer todos los bloques y días posibles
         bloques_y_dias = {}
+
+        # Lista para almacenar todas las variables de decisión de una asignatura para res3
+        variables_asignatura_semana = []
 
         for key_sala in instancia['asignaturas'][key]['salas']:
             sala_actual = key_sala
@@ -60,11 +65,27 @@ def crea_modelo(instancia, nombre_archivo):
                     bloques_y_dias[(bloque, dia)] = []
                 bloques_y_dias[(bloque, dia)].append(y_particular)
 
+                # Agrupar para restricción global (res4)
+                if (bloque, dia) not in bloques_y_dias_global:
+                    bloques_y_dias_global[(bloque, dia)] = []
+                bloques_y_dias_global[(bloque, dia)].append(y_particular)
+                
+                # Agregar la variable de decisión a la lista para res3
+                variables_asignatura_semana.append(y_particular)
 
         # Generar restricciones para asegurar que solo una sala se use por asignatura, bloque y día
         for (bloque, dia), variables in bloques_y_dias.items():
             restriccion = ' + '.join(variables) + ' <= 1;\n'
             res1 += restriccion
+        
+        # Generar restricción para que la asignatura solo tenga `bloques_semanales` asignados en la semana
+        restriccion_semana = ' + '.join(variables_asignatura_semana) + f' <= {bloques_semanales};\n'
+        res3 += restriccion_semana
+    
+    # Generar la restricción para que no haya más de una sala usándose simultáneamente en el mismo bloque y día
+    for (bloque, dia), variables in bloques_y_dias_global.items():
+        restriccion = ' + '.join(variables) + ' <= 1;\n'
+        res4 += restriccion
 
     # Esto solamente lo hago para evitar el problema de que me quede el signo más al final, no se me ocurrio una idea más pulcra
     funcion_objetivo = funcion_objetivo[:-1]
@@ -76,6 +97,8 @@ def crea_modelo(instancia, nombre_archivo):
     archivo.write( funcion_objetivo+'\n\n')
     archivo.write( res1 )
     archivo.write( res2 )
+    archivo.write( res3 )
+    archivo.write(res4)
     archivo.write( bn )
 
     print(f'Archivo {nombre_archivo}.lp creado.')
