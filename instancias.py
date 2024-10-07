@@ -31,7 +31,7 @@ def generar_instancia(num_asignaturas, num_salas, b):
     
     A = list(range(1, num_asignaturas + 1))      
     S = list(range(1, num_salas + 1))        
-    B = list(range(1, 15))                   
+    B = list(range(1, 8))                   
     D = list(range(1, 6))                    
 
     # La cantidad de elementos que forman el 65% del total de las asignaturas 

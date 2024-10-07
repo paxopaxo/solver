@@ -1,18 +1,3 @@
-def crea_combinaciones(instancia):
-    #Primeramente necesitamos una función que nos haga la combinación de todas las formas posibles, es decir, 
-    # (a,s,b,d) Asignatura, sala, bloque, dia
-    combinaciones = {}
-    for asignatura in instancia['asignaturas']:
-        for sala in instancia['salas']:
-            for bloque in instancia['bloques']:
-                for dia in instancia['dias']:
-                    if asignatura  not in combinaciones:
-                       combinaciones[asignatura] = []
-                       combinaciones[asignatura].append( [sala, bloque,dia] )
-                    else:
-                        combinaciones[asignatura].append( [sala, bloque,dia] )
-    return combinaciones
-
 #Recibe como parametro una única instancia
 def crea_modelo(instancia, nombre_archivo):
 
@@ -99,7 +84,7 @@ def crea_modelo(instancia, nombre_archivo):
     archivo.write( res2 )
     archivo.write( res3 )
     archivo.write(res4)
-    archivo.write( bn )
+    # archivo.write( bn )
 
     print(f'Archivo {nombre_archivo}.lp creado.')
 
