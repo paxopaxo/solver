@@ -10,6 +10,8 @@ def crea_modelo(instancia, nombre_archivo):
     res2 = '' #restricción horarios que no pueden asistir los profesores de det asignatura
     res3 = '' #restricción cantidad de bloques por semana
     res4 = '' #restriccion no pueden haber dos salas en un mismo horario asignadas a distintas clases. solo se puede usar la sala1 vez
+    res5 = '' #reestricción losbloques deben ser consecutivos
+    res6= '' #restriccion se asignan las con prioridad mayor
 
     # Agrupación de todas las combinaciones (bloque, día) para todas las asignaturas
     bloques_y_dias_global = {}
@@ -44,6 +46,14 @@ def crea_modelo(instancia, nombre_archivo):
                 else:
                     # Ya que los limites se deben definir solo 1 vez
                     bn += f'{y_particular},' # Esta cadena es para definirlas todas como variables binarias luego
+
+                # Para asignaturas donde hayan dos bloques:
+                if bloques_semanales == 2:
+                    # Asegurarse que no sea el último bloque
+                    if bloque != 7:
+                        res5+= f'{y_particular} <=  y{asignatura_actual}.{sala_actual}.{bloque+1}.{dia} ;\n'
+                    # if bloque != 1:
+                    #     res5+= f'{y_particular} <=  y{asignatura_actual}.{sala_actual}.{bloque-1}.{dia} ;\n'
                 
                 # Agrupar las variables por combinación de (bloque, día) para la restricción de `res1`
                 if (bloque, dia) not in bloques_y_dias:
@@ -63,9 +73,18 @@ def crea_modelo(instancia, nombre_archivo):
             restriccion = ' + '.join(variables) + ' <= 1;\n'
             res1 += restriccion
         
+        # # Generar restricción para que la asignatura solo tenga `bloques_semanales` asignados en la semana
+        # restriccion_semana = ' + '.join(variables_asignatura_semana) + f' <= {bloques_semanales};\n'
+        # res3 += restriccion_semana
+
         # Generar restricción para que la asignatura solo tenga `bloques_semanales` asignados en la semana
-        restriccion_semana = ' + '.join(variables_asignatura_semana) + f' <= {bloques_semanales};\n'
+        # Si la prioridad es mayor a 5 debe elegirse si o si.
+        if priority > 5:
+            restriccion_semana = ' + '.join(variables_asignatura_semana) + f' = {bloques_semanales};\n'
+        else:
+            restriccion_semana = ' + '.join(variables_asignatura_semana) + f' <= {bloques_semanales};\n'
         res3 += restriccion_semana
+
     
     # Generar la restricción para que no haya más de una sala usándose simultáneamente en el mismo bloque y día
     for (bloque, dia), variables in bloques_y_dias_global.items():
@@ -83,8 +102,9 @@ def crea_modelo(instancia, nombre_archivo):
     archivo.write( res1 )
     archivo.write( res2 )
     archivo.write( res3 )
-    archivo.write(res4)
-    # archivo.write( bn )
+    archivo.write( res4 )
+    archivo.write( res5 )
+    archivo.write( bn )
 
     print(f'Archivo {nombre_archivo}.lp creado.')
 
