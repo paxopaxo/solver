@@ -1,6 +1,5 @@
 #Recibe como parametro una única instancia
 def crea_modelo(instancia, nombre_archivo):
-
     # Crea archivo
     archivo = open(nombre_archivo+'.lp', 'w')
     # Escribe el contenido en el archivo
@@ -11,7 +10,8 @@ def crea_modelo(instancia, nombre_archivo):
     res3 = '' #restricción cantidad de bloques por semana
     res4 = '' #restriccion no pueden haber dos salas en un mismo horario asignadas a distintas clases. solo se puede usar la sala1 vez
     res5 = '' #reestricción losbloques deben ser consecutivos
-    res6= '' #restriccion se asignan las con prioridad mayor
+    res_aux = ''  # Restricción de uso de bloques consecutivos
+    res6 = ''
 
     # Agrupación de todas las combinaciones (bloque, día) para todas las asignaturas
     bloques_y_dias_global = {}
@@ -26,7 +26,7 @@ def crea_modelo(instancia, nombre_archivo):
 
         # Lista para almacenar todas las variables de decisión de una asignatura para res3
         variables_asignatura_semana = []
-
+        variables_auxiliares = []
         for key_sala in instancia['asignaturas'][key]['salas']:
             sala_actual = key_sala
             asignatura_actual = key
@@ -43,18 +43,27 @@ def crea_modelo(instancia, nombre_archivo):
                 # Verifica si el profesor tiene el bloque disponible sin importar la sala, si no está disponible, restringe esa combi
                 if tuple(horario) in instancia['asignaturas'][key]['bloques_no_disponibles']:
                     res2+= f'{y_particular} = 0;\n'
+                # elif bloque == 7 and bloques_semanales == 2:
+                    # res2+= f'y{asignatura_actual}.{sala_actual}.{bloque}.{dia}=0;\n'
                 else:
                     # Ya que los limites se deben definir solo 1 vez
                     bn += f'{y_particular},' # Esta cadena es para definirlas todas como variables binarias luego
 
                 # Para asignaturas donde hayan dos bloques:
-                if bloques_semanales == 2:
-                    # Asegurarse que no sea el último bloque
-                    if bloque != 7:
-                        res5+= f'{y_particular} <=  y{asignatura_actual}.{sala_actual}.{bloque+1}.{dia} ;\n'
-                    # if bloque != 1:
-                    #     res5+= f'{y_particular} <=  y{asignatura_actual}.{sala_actual}.{bloque-1}.{dia} ;\n'
-                
+                if bloques_semanales == 2 and bloque <7 :
+                    aux_variable = f'auxy{asignatura_actual}.{sala_actual}.{bloque}.{dia}'
+                    variables_auxiliares.append(aux_variable)
+                    bn += f'{aux_variable},'  # Definir la variable auxiliar como binaria
+                    # Restricción de bloques consecutivos utilizando variable auxiliar
+                    res5 += f'y{asignatura_actual}.{sala_actual}.{bloque}.{dia} + y{asignatura_actual}.{sala_actual}.{bloque + 1}.{dia} -1 <=  {aux_variable};\n'
+                    # res6 += f'{aux_variable} <= y{asignatura_actual}.{sala_actual}.{bloque}.{dia};\n'
+                    if bloque <= 5:
+                        res6 += f' y{asignatura_actual}.{sala_actual}.{bloque}.{dia} + y{asignatura_actual}.{sala_actual}.{bloque+1}.{dia} + y{asignatura_actual}.{sala_actual}.{bloque+2}.{dia}<= 2 ;\n'
+                    # if bloque == 6:
+                    #     res6 += f' y{asignatura_actual}.{sala_actual}.{bloque}.{dia} + y{asignatura_actual}.{sala_actual}.{bloque+1}.{dia}<= 2 ;\n'
+                    # res6 += f'{aux_variable} <= y{asignatura_actual}.{sala_actual}.{bloque+1}.{dia};\n'
+                    res6 += f'y{asignatura_actual}.{sala_actual}.{bloque}.{dia} <= y{asignatura_actual}.{sala_actual}.{bloque+1}.{dia};\n'
+
                 # Agrupar las variables por combinación de (bloque, día) para la restricción de `res1`
                 if (bloque, dia) not in bloques_y_dias:
                     bloques_y_dias[(bloque, dia)] = []
@@ -67,6 +76,13 @@ def crea_modelo(instancia, nombre_archivo):
                 
                 # Agregar la variable de decisión a la lista para res3
                 variables_asignatura_semana.append(y_particular)
+
+        # Agregar la restricción para la suma de variables auxiliares
+        if variables_auxiliares:
+            res51 = ' + '.join(variables_auxiliares) + f' <= 1;\n'
+            # print('res5')
+            # print(res51)
+            res_aux += res51
 
         # Generar restricciones para asegurar que solo una sala se use por asignatura, bloque y día
         for (bloque, dia), variables in bloques_y_dias.items():
@@ -104,6 +120,8 @@ def crea_modelo(instancia, nombre_archivo):
     archivo.write( res3 )
     archivo.write( res4 )
     archivo.write( res5 )
+    archivo.write( res6 )
+    archivo.write( res_aux )
     archivo.write( bn )
 
     print(f'Archivo {nombre_archivo}.lp creado.')
