@@ -15,7 +15,7 @@ def crea_modelo(instancia, nombre_archivo):
 
     # Agrupación de todas las combinaciones (bloque, día) para todas las asignaturas
     bloques_y_dias_global = {}
-
+    bloques_y_dias_sala = {}
     for key in instancia['asignaturas']:
     
         priority = instancia['asignaturas'][key]['prioridad'] # Rescata la prioridad de la asignatura
@@ -44,7 +44,7 @@ def crea_modelo(instancia, nombre_archivo):
                 if tuple(horario) in instancia['asignaturas'][key]['bloques_no_disponibles']:
                     res2+= f'{y_particular} = 0;\n'
                 # elif bloque == 7 and bloques_semanales == 2:
-                    # res2+= f'y{asignatura_actual}.{sala_actual}.{bloque}.{dia}=0;\n'
+                #     res2+= f'y{asignatura_actual}.{sala_actual}.{bloque}.{dia}=0;\n'
                 else:
                     # Ya que los limites se deben definir solo 1 vez
                     bn += f'{y_particular},' # Esta cadena es para definirlas todas como variables binarias luego
@@ -69,10 +69,15 @@ def crea_modelo(instancia, nombre_archivo):
                     bloques_y_dias[(bloque, dia)] = []
                 bloques_y_dias[(bloque, dia)].append(y_particular)
 
-                # Agrupar para restricción global (res4)
-                if (bloque, dia) not in bloques_y_dias_global:
-                    bloques_y_dias_global[(bloque, dia)] = []
-                bloques_y_dias_global[(bloque, dia)].append(y_particular)
+                # # Agrupar para restricción global (res4)
+                # if (bloque, dia) not in bloques_y_dias_global:
+                #     bloques_y_dias_global[(bloque, dia)] = []
+                # bloques_y_dias_global[(bloque, dia)].append(y_particular)
+                # Agrupar variables por sala, bloque y día
+                if (sala_actual, bloque, dia) not in bloques_y_dias_sala:
+                    bloques_y_dias_sala[(sala_actual, bloque, dia)] = []
+                bloques_y_dias_sala[(sala_actual, bloque, dia)].append(y_particular)
+                
                 
                 # Agregar la variable de decisión a la lista para res3
                 variables_asignatura_semana.append(y_particular)
@@ -102,8 +107,12 @@ def crea_modelo(instancia, nombre_archivo):
         res3 += restriccion_semana
 
     
-    # Generar la restricción para que no haya más de una sala usándose simultáneamente en el mismo bloque y día
-    for (bloque, dia), variables in bloques_y_dias_global.items():
+    # # Generar la restricción para que no haya más de una sala usándose simultáneamente en el mismo bloque y día
+    # for (bloque, dia), variables in bloques_y_dias_global.items():
+    #     restriccion = ' + '.join(variables) + ' <= 1;\n'
+    #     res4 += restriccion
+
+    for (sala, bloque, dia), variables in bloques_y_dias_sala.items():
         restriccion = ' + '.join(variables) + ' <= 1;\n'
         res4 += restriccion
 
